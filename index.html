@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title></title>
+    <meta name="description" content="">
+    <style>
+        textarea {
+            width: 200px;
+            height: 100px;
+        }
+
+        input {
+            text-align: center;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.1/css/bulma.min.css">
+</head>
+
+<body>
+    <div class="container  has-text-centered">
+        <div class="columns">
+            <div class="column">
+                <input id="init" type="number" class="input is-primary" value="70" />
+            </div>
+            <div class="column">
+                <input id="bet" type="number" class="input is-primary" value="1" />
+            </div>
+            <div class="column">
+                <input id="end" type="number" class="input is-primary" value="80" />
+            </div>
+        </div>
+
+        <div class="columns">
+            <div class="column">
+                <textarea id="pattern" class="textarea is-info">4 4 4 4</textarea>
+            </div>
+        </div>
+
+        <div class="columns">
+            <div class="column">
+                <button onclick="up()" class="button is-success is-inverted">Up</button>
+            </div>
+            <div class="column content">
+                <p id="current">70</p>
+            </div>
+            <div class="column">
+                <button onclick="down()" class="button is-danger is-inverted">Down</button>
+            </div>
+        </div>
+
+        <div class="columns">
+            <div class="column">
+                <button onclick="start()" class="button is-success">Start</button>
+            </div>
+            <div class="column">
+                <button onclick="stop()" class="button is-danger">Stop</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/13.1.6/Tone.js"></script>
+    <script>
+        var timerVar;
+        var patternVar;
+        var tempo;
+        var synth = new Tone.Synth().toMaster();
+        var acc=0;
+
+        function start() {
+            tempo = parseInt(document.getElementById("init").value);
+            patternVar = setTimeout(timer, 0, 0, document.getElementById("pattern").value);
+            if(parseInt(document.getElementById("bet").value)>0) {
+                timerVar = setTimeout(tempoTimer, parseInt(document.getElementById("bet").value)*1000,
+                 parseInt(document.getElementById("bet").value), parseInt(document.getElementById("end").value));
+            }
+        }
+
+        function up() {
+            tempo=tempo+1;
+        }
+
+        function down() {
+            if(tempo>2){
+                tempo=tempo-1;
+            }
+        }
+
+        function stop() { 
+            clearTimeout(patternVar);
+            clearTimeout(timerVar);
+        }
+
+        function timer(index, data) {
+
+            
+            var chars = (data+'').split(' ');
+            document.getElementById("current").innerHTML = tempo;
+
+            var char = chars[index];
+            if(char[0]==='*'){
+                char = char.substr(1);
+                beep(true);
+            }
+            else {
+                beep(false);
+            }
+            var note = 1/parseInt(char);
+            
+            if(note<0){
+                note = note * -0.5;
+                acc = acc - note;
+            } else {
+                note = note + acc;
+                acc = 0;
+            }
+            patternVar = setTimeout(timer, (4 * note * 60 / tempo) * 1000, (index+1) % chars.length, data);
+        }
+
+        function tempoTimer(bet, end) {
+            if(tempo < end) {
+                tempo = tempo + 1;
+            }
+            timerVar = setTimeout(tempoTimer, bet*1000, bet, end);
+        }
+
+        function beep(on) {
+            if(on){
+                synth.triggerAttackRelease('E4', '16n');
+            } else {
+                synth.triggerAttackRelease('C4', '16n');
+            }
+        }
+
+    </script>
+</body>
+
+</html>
