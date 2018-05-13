@@ -66,16 +66,58 @@
     <script>
         var timerVar;
         var patternVar;
-        var tempo;
-        var synth = new Tone.Synth().toMaster();
+        var tempo, localTempo;
+        var synth;
         var acc=0;
 
+        function setCookie(cname, cvalue, exdays) {
+            exdays = exdays || 100;
+            var d = new Date();
+            d.setTime(d.getTime() + (exdays*24*60*60*1000));
+            var expires = "expires="+ d.toUTCString();
+            document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+        }
+
+        function getCookie(cname) {
+            var name = cname + "=";
+            var decodedCookie = decodeURIComponent(document.cookie);
+            var ca = decodedCookie.split(';');
+            for(var i = 0; i <ca.length; i++) {
+                var c = ca[i];
+                while (c.charAt(0) == ' ') {
+                    c = c.substring(1);
+                }
+                if (c.indexOf(name) == 0) {
+                    return c.substring(name.length, c.length);
+                }
+            }
+            return "";
+        }
+
+        window.onload = function() {
+            var init = getCookie('init') || '72';
+            var bet = getCookie('bet') || '0';
+            var end = getCookie('end') || '96';
+            var pattern = getCookie('pattern') || '-8 -8 *4 4. 8 -8 -8 *4 16 16 16';
+            document.getElementById("init").value = init;
+            document.getElementById("bet").value = bet;
+            document.getElementById("end").value = end;
+            document.getElementById("pattern").value = pattern;
+        };
+
         function start() {
-            tempo = parseInt(document.getElementById("init").value);
+            if(!synth) {
+                synth = new Tone.Synth().toMaster();
+            }
+            setCookie('init',document.getElementById("init").value);
+            setCookie('bet',document.getElementById("bet").value);
+            setCookie('end',document.getElementById("end").value);
+            setCookie('pattern',document.getElementById("pattern").value);
+            tempo = parseFloat(document.getElementById("init").value);
             patternVar = setTimeout(timer, 0, 0, document.getElementById("pattern").value);
-            if(parseInt(document.getElementById("bet").value)>0) {
-                timerVar = setTimeout(tempoTimer, parseInt(document.getElementById("bet").value)*1000,
-                 parseInt(document.getElementById("bet").value), parseInt(document.getElementById("end").value));
+            if(parseFloat(document.getElementById("bet").value)>0) {
+                timerVar = setTimeout(tempoTimer, parseFloat(document.getElementById("bet").value)*1000,
+                parseFloat(document.getElementById("bet").value), parseFloat(document.getElementById("end").value));
             }
         }
 
@@ -96,9 +138,13 @@
 
         function timer(index, data) {
 
-            
+            if(index===0) {
+                localTempo = tempo;
+                document.getElementById("current").innerHTML = localTempo;
+            }
+
             var chars = (data+'').split(' ');
-            document.getElementById("current").innerHTML = tempo;
+            
 
             var char = chars[index];
             if(char[0]==='*'){
@@ -108,8 +154,15 @@
             else {
                 beep(false);
             }
-            var note = 1/parseInt(char);
             
+            var note = 4;
+            if(char[char.length-1]==='.') {
+                char = char.slice(0, -1); 
+                note = 1/parseInt(char) + 1/(2 * parseInt(char));
+            } else {
+                note = 1/parseInt(char)
+            }
+
             if(note<0){
                 note = note * -0.5;
                 acc = acc - note;
@@ -117,7 +170,7 @@
                 note = note + acc;
                 acc = 0;
             }
-            patternVar = setTimeout(timer, (4 * note * 60 / tempo) * 1000, (index+1) % chars.length, data);
+            patternVar = setTimeout(timer, (4 * note * 60 / localTempo) * 1000, (index+1) % chars.length, data);
         }
 
         function tempoTimer(bet, end) {
@@ -128,11 +181,15 @@
         }
 
         function beep(on) {
-            if(on){
-                synth.triggerAttackRelease('E4', '16n');
-            } else {
-                synth.triggerAttackRelease('C4', '16n');
-            }
+            Tone.context.resume().then(() => {
+                if(on){
+                    
+                    synth.triggerAttackRelease('E4', '16n');
+                
+                } else {
+                    synth.triggerAttackRelease('C4', '16n');
+                }
+            });
         }
 
     </script>
