@@ -16,21 +16,37 @@
         input {
             text-align: center;
         }
+
+        button {
+            width:100px;
+        }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.1/css/bulma.min.css">
 </head>
 
 <body>
     <div class="container  has-text-centered">
-        <div class="columns">
+        <div class="columns is-mobile">
             <div class="column">
                 <input id="init" type="number" class="input is-primary" value="70" />
             </div>
             <div class="column">
-                <input id="bet" type="number" class="input is-primary" value="1" />
+                <p>-></p>
             </div>
             <div class="column">
                 <input id="end" type="number" class="input is-primary" value="80" />
+            </div>
+        </div>
+
+        <div class="columns is-mobile">
+            <div class="column">
+                <input id="bet" type="number" class="input is-primary" value="1" />
+            </div>
+            <div class="column">
+                <input id="how" type="text" class="input is-primary" value="1" />
+            </div>
+            <div class="column">
+                <input id="by" type="number" class="input is-primary" value="1" />
             </div>
         </div>
 
@@ -40,7 +56,7 @@
             </div>
         </div>
 
-        <div class="columns">
+        <div class="columns is-mobile">
             <div class="column">
                 <button onclick="up()" class="button is-success is-inverted">Up</button>
             </div>
@@ -52,7 +68,7 @@
             </div>
         </div>
 
-        <div class="columns">
+        <div class="columns is-mobile">
             <div class="column">
                 <button onclick="start()" class="button is-success">Start</button>
             </div>
@@ -67,6 +83,7 @@
         var timerVar;
         var patternVar;
         var tempo, localTempo;
+        var by,how;
         var synth;
         var acc=0;
 
@@ -98,10 +115,15 @@
             var init = getCookie('init') || '72';
             var bet = getCookie('bet') || '0';
             var end = getCookie('end') || '96';
-            var pattern = getCookie('pattern') || '-8 -8 *4 4. 8 -8 -8 *4 16 16 16';
+            var how = getCookie('how') || '+';
+            var by = getCookie('by') || '10';
+            var pattern = getCookie('pattern') || '*-16 -16 4 4. 8 *-8 -8 4 4 16 16 16 16';
+
             document.getElementById("init").value = init;
             document.getElementById("bet").value = bet;
             document.getElementById("end").value = end;
+            document.getElementById("how").value = how;
+            document.getElementById("by").value = by;
             document.getElementById("pattern").value = pattern;
         };
 
@@ -112,8 +134,14 @@
             setCookie('init',document.getElementById("init").value);
             setCookie('bet',document.getElementById("bet").value);
             setCookie('end',document.getElementById("end").value);
+            setCookie('how',document.getElementById("how").value);
+            setCookie('by',document.getElementById("by").value);
             setCookie('pattern',document.getElementById("pattern").value);
             tempo = parseFloat(document.getElementById("init").value);
+
+            by = parseFloat(document.getElementById("by").value);
+            how = document.getElementById("how").value;
+
             patternVar = setTimeout(timer, 0, 0, document.getElementById("pattern").value);
             if(parseFloat(document.getElementById("bet").value)>0) {
                 timerVar = setTimeout(tempoTimer, parseFloat(document.getElementById("bet").value)*1000,
@@ -122,7 +150,11 @@
         }
 
         function up() {
-            tempo=tempo+1;
+            if (how === '+') {
+                tempo = tempo + by;
+            } else if (how === '*') {
+                tempo = tempo * by;
+            }
         }
 
         function down() {
@@ -143,15 +175,14 @@
                 document.getElementById("current").innerHTML = localTempo;
             }
 
-            var chars = (data+'').split(' ');
+            var chars = (data+'').indexOf(';') > -1 ? (data+'').split(';') : (data+'').split(' ');
             
 
             var char = chars[index];
-            if(char[0]==='*'){
+            if(char[0] === '*'){
                 char = char.substr(1);
                 beep(true);
-            }
-            else {
+            } else {
                 beep(false);
             }
             
@@ -170,12 +201,13 @@
                 note = note + acc;
                 acc = 0;
             }
+
             patternVar = setTimeout(timer, (4 * note * 60 / localTempo) * 1000, (index+1) % chars.length, data);
         }
 
         function tempoTimer(bet, end) {
             if(tempo < end) {
-                tempo = tempo + 1;
+                up();
             }
             timerVar = setTimeout(tempoTimer, bet*1000, bet, end);
         }
@@ -184,10 +216,10 @@
             Tone.context.resume().then(() => {
                 if(on){
                     
-                    synth.triggerAttackRelease('E4', '16n');
+                    synth.triggerAttackRelease('E4', '32n');
                 
                 } else {
-                    synth.triggerAttackRelease('C4', '16n');
+                    synth.triggerAttackRelease('C4', '32n');
                 }
             });
         }
